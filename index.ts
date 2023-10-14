@@ -17,14 +17,25 @@ async function runAudit(url: string) {
   await page.setCookie(authCookie);
 
   const result = await lighthouse(url, undefined, config, page);
-  const date = new Date().toLocaleTimeString();
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(now.getDate()).padStart(2, "0")}-${String(
+    now.getHours()
+  ).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}-${String(
+    now.getSeconds()
+  ).padStart(2, "0")}`;
 
   await Promise.all([
-    writeFile(`./reports/report-${date}.html`, result.report),
-    writeFile(`./reports/trace-${date}.json`, JSON.stringify(result.artifacts)),
+    writeFile(`./reports/report-qa${dateStr}.html`, result.report),
+    writeFile(
+      `./reports/trace-qa${dateStr}.json`,
+      JSON.stringify(result.artifacts)
+    ),
   ]);
 
-  await open(`./reports/report-${date}.html`);
+  await open(`./reports/report-qa${dateStr}.html`);
   await browser.close();
 }
 

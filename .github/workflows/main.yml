@@ -1,0 +1,56 @@
+name: Lighthouse Audit
+
+on:
+  workflow_dispatch: # Allows manual triggering of the action from the GitHub Actions UI
+env:
+  URL: ${{ vars.URL }}
+  COOKIE_DOMAIN: ${{ vars.COOKIE_DOMAIN }}
+  COOKIE_NAME: ${{ vars.COOKIE_NAME }}
+  COOKIE_VALUE: ${{ vars.COOKIE_VALUE }}
+  CPU_SLOWDOWN_MULTIPLIER: ${{ vars.CPU_SLOWDOWN_MULTIPLIER }}
+
+jobs:
+  audit:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@latest
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20.5.1"
+      - name: Create .env file
+        run: |
+          echo "URL=${{ env.URL }}" >> .env
+          echo "COOKIE_DOMAIN=${{ env.COOKIE_DOMAIN }}" >> .env
+          echo "COOKIE_NAME=${{ env.COOKIE_NAME }}" >> .env
+          echo "COOKIE_VALUE=${{ env.COOKIE_VALUE }}" >> .env
+          echo "CPU_SLOWDOWN_MULTIPLIER=${{ env.CPU_SLOWDOWN_MULTIPLIER }}" >> .env
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.OS }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.OS }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build the project
+        run: yarn run build
+      - name: test
+        run: echo "test ${{ env.URL }}"
+      - name: Run Lighthouse Audit
+        run: npm run start
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-reports
+          path: ./reports/
